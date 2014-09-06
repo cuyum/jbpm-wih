@@ -1,3 +1,4 @@
 1) Soporte para multiples URLBases
 2) Timeout de conexión
 3) Llamada asincronica
+

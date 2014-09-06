@@ -1,0 +1,4 @@
+#archivo de prueba para mocks
+#[path del servicio rest];[json de entrada];[json de salida esperado]
+/recuperar;{"taskNombre":"pepe","taskApellido":"argento"};{"taskEdad":"45", "taskDNI":"22333444"}
+/recuperar;{"taskNombre":"moni","taskApellido":"argento"};{"taskEdad":"43", "taskDNI":"1111111111"}
