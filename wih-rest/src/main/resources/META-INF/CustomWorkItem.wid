@@ -1,0 +1,15 @@
+import org.drools.core.process.core.datatype.impl.type.StringDataType;
+import org.drools.core.process.core.datatype.impl.type.ObjectDataType;
+
+[
+  [
+    "name" : "RestJson",
+     "parameters" : [
+         "path" : new StringDataType(),
+         "method" : new StringDataType(),
+      ],
+     
+     "icon" : "defaultservicenodeicon.png",
+     "displayName" : "RestJson"
+  ]
+]

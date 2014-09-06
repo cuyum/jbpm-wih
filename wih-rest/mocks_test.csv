@@ -1,0 +1,5 @@
+#archivo de prueba para mocks
+#[path del servicio rest];[json de entrada];[json de salida esperado]
+/path1;{"dato1":"val1","dato2":"val2"};{"resultado":"ok"}
+/path1;{"dato1":"val1","dato2":"val3"};{"resultado":"fail","mensaje":"val3 no es correcto"}
+/path2;{"dato1":"val1"};{}
