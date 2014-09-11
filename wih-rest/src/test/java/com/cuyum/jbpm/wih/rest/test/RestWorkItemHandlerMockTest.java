@@ -49,6 +49,28 @@ public class RestWorkItemHandlerMockTest {
 
     }
     
+    
+    //@Test
+    public void testPOSTOperation33() {
+           
+        WorkItemImpl workItem = new WorkItemImpl();
+        workItem.setParameter("path", "/proceso-declaracion-consultar-prorroga");
+        workItem.setParameter("idDeclaracionIn", "idD001");
+        System.out.println("Parametros: "+workItem.getParameters());
+        
+        
+        WorkItemManager manager = new TestWorkItemManager(workItem);
+        handler.executeWorkItem(workItem, manager);
+        
+        Map<String, Object> result = (Map<String, Object>) workItem.getResults();
+        System.out.println("Resultado: "+result);
+        
+        assertNotNull("result cannot be null", result);
+        assertEquals(result.get("consultaProrrogaOut"), "false");
+        assertEquals(result.get("tiempoInicialOut"), new Integer(0));
+
+    }
+    
     @Test
     public void testPOSTOperation2() {
            

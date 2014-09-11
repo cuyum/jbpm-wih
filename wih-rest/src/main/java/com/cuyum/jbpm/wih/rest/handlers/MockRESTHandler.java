@@ -4,16 +4,18 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 
 import com.cuyum.jbpm.wih.rest.RESTException;
 import com.cuyum.jbpm.wih.util.JSONUtil;
 
 public class MockRESTHandler implements RESTHandler {
 
-	private List<EntryMock> mockSorted;
+	private Map<EntryMock, String> mocksEntry;
 	private String fileToParse;
 
 	public MockRESTHandler(String fileToParse) {
@@ -27,17 +29,16 @@ public class MockRESTHandler implements RESTHandler {
 
 	public void loadMocks() {
 		try {
-			mockSorted = createMocks();
+			mocksEntry = createMocks();
 		} catch (Exception e) {
-			System.out
-					.println("WARNING:No se puede cargar archivos de mock "
-							+ fileToParse + " " + e.getMessage());
+			System.out.println("WARNING:No se puede cargar archivos de mock "
+					+ fileToParse + " " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
 
-	private List<EntryMock> createMocks() throws Exception {
-		List<EntryMock> ret = new LinkedList<MockRESTHandler.EntryMock>();
+	private Map<EntryMock, String> createMocks() throws Exception {
+		Map<EntryMock, String> ret = new HashMap<MockRESTHandler.EntryMock, String>();
 
 		System.out.println("Cargando mocks de " + fileToParse);
 		BufferedReader fileReader = null;
@@ -54,12 +55,10 @@ public class MockRESTHandler implements RESTHandler {
 				if (line.startsWith("#"))
 					continue;
 				String[] tokens = line.split(DELIMITER);
-				EntryMock em = new EntryMock(tokens[0].trim(),
-						tokens[1].trim(), tokens[2].trim());
-				ret.add(em);
+				EntryMock em = new EntryMock(tokens[0], tokens[1]);
+				ret.put(em, tokens[2]);
 				System.out.println("Mock cargado: " + em);
 			}
-			Collections.sort(ret);
 			System.out.println("Secargarom mocks correctamente de "
 					+ fileToParse);
 			return ret;
@@ -78,36 +77,42 @@ public class MockRESTHandler implements RESTHandler {
 	public Map<String, Object> execute(String method, String urlBase,
 			String path, Map<String, Object> parameters) throws RESTException {
 		// Si no hay mocks devuelve los mismos resultados
+		
 		System.out.println("Ejecutando mock");
-		if (mockSorted == null)
+		if (mocksEntry == null)
 			return parameters;
-		String input = JSONUtil.convertMapToJSON(parameters);
-		EntryMock searchMock = new EntryMock(path, input, null);
+		//String input = JSONUtil.convertMapToJSON(parameters);
+		EntryMock searchMock = new EntryMock(path, parameters);
 		System.out.println("Buscando: " + searchMock);
-		int idx = Collections.binarySearch(mockSorted, searchMock);
+		String output = mocksEntry.get(searchMock);
 
-		if (idx < 0) {
+		if (output ==null) {
 			throw new RESTException("Error " + 404
 					+ ": no se encuentra el mock " + searchMock);
 		}
 
-		EntryMock founded = mockSorted.get(idx);
-		String output = founded.getOutput();
-		System.out.println("Encontrado: " + founded);
+		System.out.println("Encontrado: " + output);
 		Map<String, Object> ret = JSONUtil.convertJsonToMap(output);
 		return ret;
 	}
 
-	static class EntryMock implements Comparable<EntryMock> {
+	static class EntryMock {
 		private String serviceName;
 		private String input;
-		private String output;
+		private Map<String, Object> inputMap;
 
-		public EntryMock(String serviceName, String input, String output) {
+		public EntryMock(String serviceName, String input) {
 			super();
-			this.serviceName = serviceName;
-			this.input = input;
-			this.output = output;
+			this.serviceName = serviceName.trim();
+			this.input = input.trim();
+			this.inputMap = JSONUtil.convertJsonToMap(this.input);
+		}
+		
+		public EntryMock(String serviceName, Map<String, Object> inputMap) {
+			super();
+			this.serviceName = serviceName.trim();
+			this.inputMap = inputMap;
+			this.input = JSONUtil.convertMapToJSON(this.inputMap);
 		}
 
 		public String getServiceName() {
@@ -118,21 +123,22 @@ public class MockRESTHandler implements RESTHandler {
 			return input;
 		}
 
-		public String getOutput() {
-			return output;
-		}
-
-		@Override
-		public int compareTo(EntryMock o) {
-			return (this.getServiceName() + this.getInput()).compareTo(o
-					.getServiceName() + o.getInput());
+		private boolean equalMaps(Map<String, Object> m1,
+				Map<String, Object> m2) {
+			if (m1.size() != m2.size())
+				return false;
+			for (String key : m1.keySet())
+				if (!m1.get(key).equals(m2.get(key)))
+					return false;
+			return true;
 		}
 
 		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + ((input == null) ? 0 : input.hashCode());
+			result = prime * result
+					+ ((inputMap == null) ? 0 : inputMap.hashCode());
 			result = prime * result
 					+ ((serviceName == null) ? 0 : serviceName.hashCode());
 			return result;
@@ -147,10 +153,10 @@ public class MockRESTHandler implements RESTHandler {
 			if (getClass() != obj.getClass())
 				return false;
 			EntryMock other = (EntryMock) obj;
-			if (input == null) {
-				if (other.input != null)
+			if (inputMap == null) {
+				if (other.inputMap != null)
 					return false;
-			} else if (!input.equals(other.input))
+			} else if (!equalMaps(this.inputMap, other.inputMap))
 				return false;
 			if (serviceName == null) {
 				if (other.serviceName != null)
@@ -165,10 +171,10 @@ public class MockRESTHandler implements RESTHandler {
 			return "EntryMock ["
 					+ (serviceName != null ? "serviceName=" + serviceName
 							+ ", " : "")
-					+ (input != null ? "input=" + input + ", " : "")
-					+ (output != null ? "output=" + output : "") + "]";
+					+ (input != null ? "input=" + input : "") + "]";
 		}
 
+		
 	}
 
 }
