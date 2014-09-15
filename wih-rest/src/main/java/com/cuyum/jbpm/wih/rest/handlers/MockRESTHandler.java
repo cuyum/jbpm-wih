@@ -3,12 +3,8 @@ package com.cuyum.jbpm.wih.rest.handlers;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 import com.cuyum.jbpm.wih.rest.RESTException;
 import com.cuyum.jbpm.wih.util.JSONUtil;
@@ -20,7 +16,7 @@ public class MockRESTHandler implements RESTHandler {
 
 	public MockRESTHandler(String fileToParse) {
 		this.fileToParse = fileToParse;
-		loadMocks();
+		//loadMocks();
 	}
 
 	public String getFileToParse() {
@@ -38,7 +34,7 @@ public class MockRESTHandler implements RESTHandler {
 	}
 
 	private Map<EntryMock, String> createMocks() throws Exception {
-		Map<EntryMock, String> ret = new HashMap<MockRESTHandler.EntryMock, String>();
+		Map<EntryMock, String> ret = new HashMap<EntryMock, String>();
 
 		System.out.println("Cargando mocks de " + fileToParse);
 		BufferedReader fileReader = null;
@@ -78,15 +74,16 @@ public class MockRESTHandler implements RESTHandler {
 			String path, Map<String, Object> parameters) throws RESTException {
 		// Si no hay mocks devuelve los mismos resultados
 		
+		loadMocks();
 		System.out.println("Ejecutando mock");
 		if (mocksEntry == null)
 			return parameters;
-		//String input = JSONUtil.convertMapToJSON(parameters);
+
 		EntryMock searchMock = new EntryMock(path, parameters);
 		System.out.println("Buscando: " + searchMock);
 		String output = mocksEntry.get(searchMock);
 
-		if (output ==null) {
+		if (output == null) {
 			throw new RESTException("Error " + 404
 					+ ": no se encuentra el mock " + searchMock);
 		}
@@ -96,85 +93,82 @@ public class MockRESTHandler implements RESTHandler {
 		return ret;
 	}
 
-	static class EntryMock {
-		private String serviceName;
-		private String input;
-		private Map<String, Object> inputMap;
+}
 
-		public EntryMock(String serviceName, String input) {
-			super();
-			this.serviceName = serviceName.trim();
-			this.input = input.trim();
-			this.inputMap = JSONUtil.convertJsonToMap(this.input);
-		}
-		
-		public EntryMock(String serviceName, Map<String, Object> inputMap) {
-			super();
-			this.serviceName = serviceName.trim();
-			this.inputMap = inputMap;
-			this.input = JSONUtil.convertMapToJSON(this.inputMap);
-		}
+class EntryMock {
+	private String serviceName;
+	private String input;
+	private Map<String, Object> inputMap;
 
-		public String getServiceName() {
-			return serviceName;
-		}
+	public EntryMock(String serviceName, String input) {
+		super();
+		this.serviceName = serviceName.trim();
+		this.input = input.trim();
+		this.inputMap = JSONUtil.convertJsonToMap(this.input);
+	}
 
-		public String getInput() {
-			return input;
-		}
+	public EntryMock(String serviceName, Map<String, Object> inputMap) {
+		super();
+		this.serviceName = serviceName.trim();
+		this.inputMap = inputMap;
+		this.input = JSONUtil.convertMapToJSON(this.inputMap);
+	}
 
-		private boolean equalMaps(Map<String, Object> m1,
-				Map<String, Object> m2) {
-			if (m1.size() != m2.size())
+	public String getServiceName() {
+		return serviceName;
+	}
+
+	public String getInput() {
+		return input;
+	}
+
+	private boolean equalMaps(Map<String, Object> m1, Map<String, Object> m2) {
+		if (m1.size() != m2.size())
+			return false;
+		for (String key : m1.keySet())
+			if (!m1.get(key).equals(m2.get(key)))
 				return false;
-			for (String key : m1.keySet())
-				if (!m1.get(key).equals(m2.get(key)))
-					return false;
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((inputMap == null) ? 0 : inputMap.hashCode());
+		result = prime * result
+				+ ((serviceName == null) ? 0 : serviceName.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result
-					+ ((inputMap == null) ? 0 : inputMap.hashCode());
-			result = prime * result
-					+ ((serviceName == null) ? 0 : serviceName.hashCode());
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		EntryMock other = (EntryMock) obj;
+		if (inputMap == null) {
+			if (other.inputMap != null)
 				return false;
-			if (getClass() != obj.getClass())
+		} else if (!equalMaps(this.inputMap, other.inputMap))
+			return false;
+		if (serviceName == null) {
+			if (other.serviceName != null)
 				return false;
-			EntryMock other = (EntryMock) obj;
-			if (inputMap == null) {
-				if (other.inputMap != null)
-					return false;
-			} else if (!equalMaps(this.inputMap, other.inputMap))
-				return false;
-			if (serviceName == null) {
-				if (other.serviceName != null)
-					return false;
-			} else if (!serviceName.equals(other.serviceName))
-				return false;
-			return true;
-		}
+		} else if (!serviceName.equals(other.serviceName))
+			return false;
+		return true;
+	}
 
-		@Override
-		public String toString() {
-			return "EntryMock ["
-					+ (serviceName != null ? "serviceName=" + serviceName
-							+ ", " : "")
-					+ (input != null ? "input=" + input : "") + "]";
-		}
-
-		
+	@Override
+	public String toString() {
+		return "EntryMock ["
+				+ (serviceName != null ? "serviceName=" + serviceName + ", "
+						: "") + (input != null ? "input=" + input : "") + "]";
 	}
 
 }

@@ -1,0 +1,5 @@
+#Escenarios1
+#El declarante no pide prorroga y no tiene manifiestos asociados
+/proceso-declaracion-consultar-prorroga;{"idDeclaracionIn":"idD001"};{"consultaProrrogaOut":"false","tiempoInicialOut":0}
+/proceso-declaracion-procesar-declaracion-vencida;{"idDeclaracionIn":"idD001"};{"requiereAjusteOut":"false"} 
+/proceso-declaracion-anular-declaracion;{"idDeclaracionIn":"idD001"};{}
